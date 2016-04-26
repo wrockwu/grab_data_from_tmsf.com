@@ -93,7 +93,10 @@ if __name__ == '__main__':
         min_now = _time.localtime().tm_min
         sec_now = _time.localtime().tm_sec
         t_sleep = s_sleep
-
+        
+        if min_now > 30:
+            min_now -= 30
+        
         if (h_now > h_start) and (h_now < h_end):
             main()
             t_sleep = s_sleep - ((min_now)*60 + sec_now)
