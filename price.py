@@ -64,8 +64,8 @@ def web_data():
     except urllib.error.HTTPError as e:
         print(e.reason())
 
-    src_data = src_data.decode('utf-8')
-    tr_data = cut_down(src_data, user_href)
+    src_data_dec = src_data.decode('utf-8')
+    tr_data = cut_down(src_data_dec, user_href)
     td_data = tr_data.find_all('td')
     
     return td_data
