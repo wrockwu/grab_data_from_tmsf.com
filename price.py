@@ -59,8 +59,10 @@ def web_data():
     req = urllib.request.Request(url, headers=headers)
     try:
         src_data =  urllib.request.urlopen(req).read()
-    except URLError as err:
-        print('URL Error: ' + str(err))
+    except urllib.error.URLError as e:
+        print(e.reason)
+    except urllib.error.HTTPError as e:
+        print(e.reason())
 
     src_data = src_data.decode('utf-8')
     tr_data = cut_down(src_data, user_href)
