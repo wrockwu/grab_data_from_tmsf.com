@@ -55,19 +55,21 @@ def extract_data(td_data):
     return pick_major(primary_filter)
     
 def web_data():
-    '''scrab raw data from web'''
+    '''scrab raw data from web, if network disconnect return NULL list to avoid exception'''
+    td_data = []
     req = urllib.request.Request(url, headers=headers)
     try:
-        src_data =  urllib.request.urlopen(req).read()
+        with urllib.request.urlopen(req) as src_data:
+            src_data_dec = src_data.read().decode('utf-8')
     except urllib.error.URLError as e:
         print(e.reason)
+        return td_data
     except urllib.error.HTTPError as e:
-        print(e.reason())
+        print(e.reason)
+        return td_data
 
-    src_data_dec = src_data.decode('utf-8')
     tr_data = cut_down(src_data_dec, user_href)
     td_data = tr_data.find_all('td')
-    
     return td_data
 
 def main():
@@ -77,7 +79,11 @@ def main():
     '''store to file'''
     try:
         with open(file_path, 'at+') as data_file:
-            print(ripe, file = data_file)
+            '''store data if list has real data'''
+            if ripe:
+                print(ripe, file = data_file)
+            else:
+                print('get data failed')
     except IOError as err:
         print('File Error:' + str(err))
 
@@ -92,6 +98,7 @@ if __name__ == '__main__':
     while True:
         h_now = _time.localtime().tm_hour
         min_now = _time.localtime().tm_min
+        sec_now = _time.localtime().tm_sec
         t_sleep = s_sleep
         
         '''30min a cycle, calc left time should sleep'''
@@ -101,7 +108,7 @@ if __name__ == '__main__':
         if (h_now > h_start) and (h_now < h_end):
             '''scrab data every 30min in this period'''
             main()
-            '''for accurate reason get second here, main() cost lots of time'''
+            '''keep accurate to get second again, main() costs lot of time'''
             sec_now = _time.localtime().tm_sec
             t_sleep = s_sleep - ((min_now)*60 + sec_now)
             _time.sleep(t_sleep)
