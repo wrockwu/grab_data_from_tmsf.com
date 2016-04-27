@@ -30,7 +30,7 @@ class House:
         self.name = raw_data[0]
 
 def get_raw_data(s_data, u_href):
-    soup = BeautifulSoup(s_data)
+    soup = BeautifulSoup(s_data, 'lxml')
     '''first, get all main district data by node 'div' & style='display:block' '''
     all_main_data = soup.find('div', style = 'display:block')
     '''second, find target son data by node 'a' & href(is a url,
