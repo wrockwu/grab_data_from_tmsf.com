@@ -6,6 +6,9 @@ import urllib.request
 import re
 from bs4 import BeautifulSoup
 
+'''debug on/off'''
+DBGINFO_TO_FILE = 'ON'
+
 tmsf_dir = os.path.expanduser('~/tmsf')
 tmsf_file = os.path.expanduser('~/tmsf/price.txt')
 tmsf_log = os.path.expanduser('~/tmsf/log.txt')
@@ -21,32 +24,39 @@ dic_let2arb={'zero':'0','one':'1','two':'2','three':'3','four':'4','five':'5','s
 '''pick up data every 'freq' at 'tm_hour_start':00:00-'tm_hour_end':00:00'''
 tm_hour_start = 9
 tm_hour_end = 23
-freq = 2
+freq = 5
 tm_sec_sleep = freq*60
 
 '''store last time data'''
 last_ripe = []
 
 def debug(string):
-    try:
-        with open(tmsf_log, 'at+') as datafile:
-            print(string, file=datafile)
-    except IOError as err:
-        print('IOError:' + err, file=datafile)
+    if DBGINFO_TO_FILE == 'ON':
+        try:
+            with open(tmsf_log, 'at+') as datafile:
+                print(string, file=datafile)
+        except IOError as err:
+            print('IOError:' + err, file=datafile)
+    else:
+        print(string)
 
 def cut_down(s_data, u_href):
+    all_main_data = []
+    target_raw_data = []
     soup = BeautifulSoup(s_data, 'lxml')
     '''first, get all main district data by node 'div' & style='display:block' '''
     all_main_data = soup.find('div', style = 'display:block')
-    '''second, find target son data by node 'a' & href(is a url,
-    modify this condition later version)'''
+    '''second, find target son data by node 'a' & href(is a url, modify this condition later version)'''
+    if not all_main_data:
+        debug('cant find data table(incomplete web data?)')
+        return all_main_data
     target_raw_data = all_main_data.contents[1].find_next('a', href = u_href)
     '''last, find & return parent 'tr' node, include all raw data'''
-    if target_raw_data:
-        return target_raw_data.find_previous('tr')
-    '''non-exist specify data, return NULL'''
-    debug('Zero Turnover')
-    return target_raw_data
+    if not target_raw_data:
+        '''non-exist specify data, return NULL'''
+        debug('zero turnover until now')
+        return target_raw_data
+    return target_raw_data.find_previous('tr')
 
 def pick_major(list_data):
     '''transform letter number to arbic number'''
@@ -61,10 +71,12 @@ def pick_major(list_data):
                 house_ripe.append(t)
         else:
             continue
-        
+
     return house_ripe
 
 def extract_data(td_data):
+    if not td_data:
+        return td_data
     '''pick up major data'''
     primary_filter = []
     pattern = re.compile(regular_letter, re.S)
@@ -110,12 +122,8 @@ def main():
                     debug("data changed:" + str(ripe))
                     print(ripe, file = data_file)
                     last_ripe = ripe
-            else:
-                debug('get data failed')
     except IOError as err:
         debug('File Error:' + str(err))
-
-    print('last data is:' + str(last_ripe))
 
 if __name__ == '__main__':
     '''creat data file&log file'''
@@ -143,7 +151,7 @@ if __name__ == '__main__':
 
         if (tm_hour_now > tm_hour_start) and (tm_hour_now < tm_hour_end):
             '''scrab data every 30min in this period'''
-            debug('picked up data @: ' + str(_time.ctime()))
+            debug('start pick up data @: ' + str(_time.ctime()))
             main()
             '''keep accurate to get second again, main() costs lot of time'''
             tm_sec_now = _time.localtime().tm_sec
