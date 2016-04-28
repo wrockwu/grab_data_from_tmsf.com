@@ -6,17 +6,31 @@ import urllib.request
 import re
 from bs4 import BeautifulSoup
 
+tmsf_dir = os.path.expanduser('~/tmsf')
+tmsf_file = os.path.expanduser('~/tmsf/price.txt')
+tmsf_log = os.path.expanduser('~/tmsf/log.txt')
+
 url = 'http://www.tmsf.com/daily.htm'
 user_agent = 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:45.0) Gecko/20100101 Firefox/45.0'
 headers = {'User-Agent':user_agent}
 user_href = "/newhouse/property_33_169276739_info.htm"
-file_path = '/home/bwu/tmsf_price.txt'
+
 regular_letter = '.*?class="numb(.*?)"'
 dic_let2arb={'zero':'0','one':'1','two':'2','three':'3','four':'4','five':'5','six':'6','seven':'7','eight':'8','nine':'9','dor':'.'}
 
-h_start = 9
-h_end = 23
-s_sleep = 30*60
+tm_hour_start = 9
+tm_hour_end = 23
+freq = 2
+tm_sec_sleep = freq*60
+
+last_ripe = []
+
+def debug(string):
+    try:
+        with open(tmsf_log, 'at+') as datafile:
+            print(string, file=datafile)
+    except IOError as err:
+        print('IOError:' + err, file=datafile)
 
 def cut_down(s_data, u_href):
     soup = BeautifulSoup(s_data, 'lxml')
@@ -26,7 +40,11 @@ def cut_down(s_data, u_href):
     modify this condition later version)'''
     target_raw_data = all_main_data.contents[1].find_next('a', href = u_href)
     '''last, find & return parent 'tr' node, include all raw data'''
-    return target_raw_data.find_previous('tr')
+    if target_raw_data:
+        return target_raw_data.find_previous('tr')
+    '''non-exist specify data, return NULL'''
+    debug('Zero Turnover')
+    return target_raw_data
 
 def pick_major(list_data):
     '''transform letter number to arbic number'''
@@ -62,60 +80,79 @@ def web_data():
         with urllib.request.urlopen(req) as src_data:
             src_data_dec = src_data.read().decode('utf-8')
     except urllib.error.URLError as e:
-        print(e.reason)
+        debug(e.reason)
         return td_data
     except urllib.error.HTTPError as e:
-        print(e.reason)
+        debug(e.reason)
         return td_data
-
+    '''web don't have the specify data, return NULL td_data'''
     tr_data = cut_down(src_data_dec, user_href)
-    td_data = tr_data.find_all('td')
+    if tr_data:
+        td_data = tr_data.find_all('td')
+
     return td_data
 
 def main():
     '''extract data about signed count, area, price'''
     ripe = extract_data(web_data())
+    global last_ripe
 
     '''store to file'''
     try:
-        with open(file_path, 'at+') as data_file:
+        with open(tmsf_file, 'at+') as data_file:
             '''store data if list has real data'''
             if ripe:
-                print(ripe, file = data_file)
+                if ripe == last_ripe:
+                    debug("unchanged data:" + str(ripe) + ", ignore it")
+                else:
+                    debug("data changed:" + str(ripe))
+                    print(ripe, file = data_file)
+                    last_ripe = ripe
             else:
-                print('get data failed')
+                debug('get data failed')
     except IOError as err:
-        print('File Error:' + str(err))
+        debug('File Error:' + str(err))
 
-    with open(file_path, 'r') as data_file:
-        print(data_file.readlines())
+    print('last data is:' + str(last_ripe))
 
 if __name__ == '__main__':
+    '''creat data file&log file'''
+    if not os.path.exists(tmsf_dir):
+        os.mkdir(tmsf_dir)
+    if not os.path.exists(tmsf_file):
+        os.mknod(tmsf_file)
+    if not os.path.exists(tmsf_log):
+        os.mknod(tmsf_log)
+
     '''set timezone to PRC'''
     os.environ['TZ'] = 'PRC'
     _time.tzset()
 
     while True:
-        h_now = _time.localtime().tm_hour
-        min_now = _time.localtime().tm_min
-        sec_now = _time.localtime().tm_sec
-        t_sleep = s_sleep
+        tm_hour_now = _time.localtime().tm_hour
+        tm_min_now = _time.localtime().tm_min
+        tm_sec_now = _time.localtime().tm_sec
+        tm_min = tm_min_now
+        tm_need_sleep = tm_sec_sleep
         
         '''30min a cycle, calc left time should sleep'''
-        if min_now >= 30:
-            min_now -= 30
+        while tm_min >= freq:
+            tm_min -= freq
         
-        if (h_now > h_start) and (h_now < h_end):
+        if (tm_hour_now > tm_hour_start) and (tm_hour_now < tm_hour_end):
             '''scrab data every 30min in this period'''
+            debug('picked up data @: ' + str(_time.ctime()))
             main()
             '''keep accurate to get second again, main() costs lot of time'''
-            sec_now = _time.localtime().tm_sec
-            t_sleep = s_sleep - ((min_now)*60 + sec_now)
-            _time.sleep(t_sleep)
+            tm_sec_now = _time.localtime().tm_sec
+            tm_need_sleep = tm_sec_sleep - ((tm_min)*60 + tm_sec_now)
+            debug('sleep ' + str(tm_need_sleep) + 's')
+            _time.sleep(tm_need_sleep)
         else:
-            '''sleep midnight'''
-            t_sleep = s_sleep - ((min_now)*60 + sec_now)
-            print('time now: ' + str(_time.ctime()))
-            print('we will sleep ' + str(t_sleep) + 's')
-            _time.sleep(t_sleep)
+            '''midnight wakeup every hour'''
+            tm_need_sleep = 60*60 - ((tm_min_now)*60 + tm_sec_now)
+            debug('+++++++++++++Rest Time+++++++++++++++++')
+            debug('time: ' + str(_time.ctime()))
+            debug('sleep ' + str(tm_need_sleep) + 's')
+            _time.sleep(tm_need_sleep)
 
