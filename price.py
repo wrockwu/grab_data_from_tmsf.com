@@ -23,13 +23,14 @@ regular_letter = '.*?class="numb(.*?)"'
 dic_let2arb={'zero':'0','one':'1','two':'2','three':'3','four':'4','five':'5','six':'6','seven':'7','eight':'8','nine':'9','dor':'.'}
 
 '''pick up data every 'freq' at 'tm_hour_start':00:00-'tm_hour_end':00:00'''
+tm_tag = '00:00:00'
 tm_hour_start = 9
 tm_hour_end = 23
-freq = 5
+freq = 1
 tm_sec_sleep = freq*60
 
 '''store last time data'''
-last_ripe = []
+last_ripe = ['0', '0', '0', '0']
 
 def debug(string):
     if DBGINFO_TO_FILE == 'ON':
@@ -62,6 +63,8 @@ def cut_down(s_data, u_href):
 def pick_major(list_data):
     '''transform letter number to arbic number'''
     house_ripe = []
+    '''add time_tag'''
+    house_ripe.append(tm_tag)
     for t in list_data:
         if len(t):
             if isinstance(t, list):
@@ -117,7 +120,8 @@ def main():
         with open(tmsf_file, 'ab+') as data_file:
             '''store data if list has real data'''
             if ripe:
-                if ripe == last_ripe:
+                '''[1] is count, count change, other info must changed'''
+                if ripe[1] == last_ripe[1]:
                     debug("ignore unchanged data:" + str(ripe))
                 else:
                     debug("store changed data:" + str(ripe))
@@ -145,6 +149,9 @@ if __name__ == '__main__':
         tm_sec_now = _time.localtime().tm_sec
         tm_min = tm_min_now
         tm_need_sleep = tm_sec_sleep
+        '''extract time, drop date'''
+        tm_list = _time.ctime().split(' ')
+        tm_tag = tm_list[3]
 
         '''calc left time should sleep'''
         while tm_min >= freq:
@@ -152,7 +159,7 @@ if __name__ == '__main__':
 
         if (tm_hour_now > tm_hour_start) and (tm_hour_now < tm_hour_end):
             '''scrab data every 30min in this period'''
-            debug('start pick up data @: ' + str(_time.ctime()))
+            debug('start pick up data @ ' + tm_tag)
             main()
             '''keep accurate to get second again, main() costs lot of time'''
             tm_sec_now = _time.localtime().tm_sec
@@ -163,7 +170,7 @@ if __name__ == '__main__':
             '''midnight wakeup every hour'''
             tm_need_sleep = 60*60 - ((tm_min_now)*60 + tm_sec_now)
             debug('+++++++++++++Rest Time+++++++++++++++++')
-            debug('time: ' + str(_time.ctime()))
+            debug('time @ ' + tm_tag)
             debug('sleep ' + str(tm_need_sleep) + 's')
             _time.sleep(tm_need_sleep)
 
