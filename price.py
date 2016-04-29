@@ -109,6 +109,20 @@ def web_data():
         td_data = tr_data.find_all('td')
 
     return td_data
+def store2file(data):
+    a_list = []
+    if os.path.getsize(tmsf_file) > 0:
+        with open(tmsf_file, 'rb') as datafile:
+            a_list = pickle.load(datafile)
+            a_list.append(data)
+            debug(a_list)
+
+        with open(tmsf_file, 'wb+') as datafile:
+            pickle.dump(a_list, datafile)
+    else:
+        with open(tmsf_file, 'wb+') as datafile:
+            a_list.append(data)
+            pickle.dump(a_list, datafile)
 
 def main():
     '''extract data about signed count, area, price'''
@@ -122,10 +136,11 @@ def main():
             if ripe:
                 '''[1] is count, count change, other info must changed'''
                 if ripe[1] == last_ripe[1]:
-                    debug("ignore unchanged data:" + str(ripe))
+                    debug('ignore unchanged data:' + str(ripe))
                 else:
-                    debug("store changed data:" + str(ripe))
-                    pickle.dump(ripe, data_file)
+                    debug('store changed data:' + str(ripe))
+                    store2file(ripe)
+                    debug('store data success')
                     last_ripe = ripe
     except IOError as err:
         debug('File Error:' + str(err))
