@@ -17,6 +17,7 @@ url = 'http://www.tmsf.com/daily.htm'
 user_agent = 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:45.0) Gecko/20100101 Firefox/45.0'
 headers = {'User-Agent':user_agent}
 user_href = "/newhouse/property_33_169276739_info.htm"
+#user_href = "/newhouse/property_33_147967111_info.htm"
 
 regular_letter = '.*?class="numb(.*?)"'
 dic_let2arb={'zero':'0','one':'1','two':'2','three':'3','four':'4','five':'5','six':'6','seven':'7','eight':'8','nine':'9','dor':'.'}
@@ -113,14 +114,14 @@ def main():
 
     '''store to file'''
     try:
-        with open(tmsf_file, 'at+') as data_file:
+        with open(tmsf_file, 'ab+') as data_file:
             '''store data if list has real data'''
             if ripe:
                 if ripe == last_ripe:
                     debug("ignore unchanged data:" + str(ripe))
                 else:
-                    debug("data changed:" + str(ripe))
-                    print(ripe, file = data_file)
+                    debug("store changed data:" + str(ripe))
+                    pickle.dump(ripe, data_file)
                     last_ripe = ripe
     except IOError as err:
         debug('File Error:' + str(err))
