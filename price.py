@@ -20,7 +20,7 @@ user_href = "/newhouse/property_33_169276739_info.htm"
 #user_href = "/newhouse/property_33_147967111_info.htm"
 
 regular_letter = '.*?class="numb(.*?)"'
-dic_let2arb={'zero':'0','one':'1','two':'2','three':'3','four':'4','five':'5','six':'6','seven':'7','eight':'8','nine':'9','dor':'.'}
+letter2arb={'zero':'0','one':'1','two':'2','three':'3','four':'4','five':'5','six':'6','seven':'7','eight':'8','nine':'9','dor':'.'}
 
 '''pick up data every 'freq' at 'tm_hour_start':00:00-'tm_hour_end':00:00'''
 tm_tag = '00:00:00'
@@ -28,6 +28,8 @@ tm_hour_start = 9
 tm_hour_end = 23
 freq = 1
 tm_sec_sleep = freq*60
+
+retry_times = 5
 
 '''store last time data'''
 last_ripe = ['0', '0', '0', '0']
@@ -42,73 +44,81 @@ def debug(string):
     else:
         print(string)
 
-def cut_down(s_data, u_href):
-    all_main_data = []
-    target_raw_data = []
+def data_handler(s_data, u_href):
+    data = []
+    processed_data =[]
+    complete_data = []
+
+    if not s_data:
+        debug('source data error')
+        return complete_data
+
     soup = BeautifulSoup(s_data, 'lxml')
-    '''first, get all main district data by node 'div' & style='display:block' '''
-    all_main_data = soup.find('div', style = 'display:block')
-    '''second, find target son data by node 'a' & href(is a url, modify this condition later version)'''
-    if not all_main_data:
+
+    '''get all main district data by node 'div' & style='display:block' '''
+    data = soup.find('div', style = 'display:block')
+    '''find target son data by node 'a' & href(is a url, modify this condition later version)'''
+    if not data:
         debug('cant find data table(incomplete web data?)')
-        return all_main_data
-    target_raw_data = all_main_data.contents[1].find_next('a', href = u_href)
-    '''last, find & return parent 'tr' node, include all raw data'''
-    if not target_raw_data:
+        data = []
+        return data
+    '''find & return parent 'tr' node, include all raw data'''
+    if not data.contents[1].find_next('a', href = u_href):
         '''non-exist specify data, return NULL'''
         debug('zero turnover until now')
-        return target_raw_data
-    return target_raw_data.find_previous('tr')
+        data = []
+        return data
+    if not data.contents[1].find_next('a', href = u_href).find_previous('tr'):
+        debug('html style#1 changed, must modify rule immediately')
+        data = []
+        return data
+    data = data.contents[1].find_next('a', href = u_href).find_previous('tr').find_all('td')
+    if not data:
+        debug('html style#2 changed, must modify rule immediately')
+        data = []
+        return data
 
-def pick_major(list_data):
-    '''transform letter number to arbic number'''
-    house_ripe = []
+    '''add '''
+    pattern = re.compile(regular_letter, re.S)
+    for item in data:
+        string = item.find_all('span')
+        processed_data.append(re.findall(pattern, str(string).strip()))
+
+    complete_data = []
     '''add time_tag'''
-    house_ripe.append(tm_tag)
-    for t in list_data:
+    complete_data.append(tm_tag)
+    for t in processed_data:
         if len(t):
             if isinstance(t, list):
                 res = ''
                 for le in t:
-                    res += (dic_let2arb[le])
-                t = res
-                house_ripe.append(t)
+                    res += (letter2arb[le])
+                complete_data.append(res)
         else:
             continue
 
-    return house_ripe
+    return complete_data
 
-def extract_data(td_data):
-    if not td_data:
-        return td_data
-    '''pick up major data'''
-    primary_filter = []
-    pattern = re.compile(regular_letter, re.S)
-    for item in td_data:
-        string = item.find_all('span')
-        primary_filter.append(re.findall(pattern, str(string).strip()))
-
-    return pick_major(primary_filter)
-    
-def web_data():
-    '''scrab raw data from web, if network disconnect return NULL list to avoid exception'''
-    td_data = []
+def url_open():
+    retry = 0
     req = urllib.request.Request(url, headers=headers)
-    try:
-        with urllib.request.urlopen(req) as src_data:
-            src_data_dec = src_data.read().decode('utf-8')
-    except urllib.error.URLError as e:
-        debug(e.reason)
-        return td_data
-    except urllib.error.HTTPError as e:
-        debug(e.reason)
-        return td_data
-    '''web don't have the specify data, return NULL td_data'''
-    tr_data = cut_down(src_data_dec, user_href)
-    if tr_data:
-        td_data = tr_data.find_all('td')
+    while retry < retry_times:
+        retry += 1
+        try:
+            with urllib.request.urlopen(req) as data:
+                return data.read().decode('utf-8')
+        except urllib.error.URLError as e:
+            debug("retry times:" + str(retry))
+            debug(e.reason)
+            continue
+        except urllib.error.HTTPError as e:
+            debug("retry times:" + str(retry))
+            debug(e.reason)
+            continue
 
-    return td_data
+    debug("url open failed")
+    return False
+
 def store2file(data):
     a_list = []
     if os.path.getsize(tmsf_file) > 0:
@@ -126,7 +136,7 @@ def store2file(data):
 
 def main():
     '''extract data about signed count, area, price'''
-    ripe = extract_data(web_data())
+    ripe = data_handler(url_open(), user_href)
     global last_ripe
 
     '''store to file'''
@@ -134,7 +144,7 @@ def main():
         with open(tmsf_file, 'ab+') as data_file:
             '''store data if list has real data'''
             if ripe:
-                '''[1] is count, count change, other info must changed'''
+                '''[1] is count, count unchang, other info mustn't chang, ignore it'''
                 if ripe[1] == last_ripe[1]:
                     debug('ignore unchanged data:' + str(ripe))
                 else:
@@ -144,6 +154,16 @@ def main():
                     last_ripe = ripe
     except IOError as err:
         debug('File Error:' + str(err))
+
+def get_last_data():
+    global last_ripe
+
+    if os.path.getsize(tmsf_file) > 0:
+        with open(tmsf_file, 'rb') as datafile:
+            a_list = pickle.load(datafile)
+            last_ripe = a_list[-1]
+    else:
+        last_ripe = []
 
 if __name__ == '__main__':
     '''creat data file&log file'''
@@ -157,6 +177,7 @@ if __name__ == '__main__':
     '''set timezone to PRC'''
     os.environ['TZ'] = 'PRC'
     _time.tzset()
+    get_last_data()
 
     while True:
         tm_hour_now = _time.localtime().tm_hour
@@ -166,7 +187,7 @@ if __name__ == '__main__':
         tm_need_sleep = tm_sec_sleep
         '''extract time, drop date'''
         tm_list = _time.ctime().split(' ')
-        tm_tag = tm_list[3]
+        tm_tag = tm_list[1] + ' ' + tm_list[3] + ' ' + tm_list[4]
 
         '''calc left time should sleep'''
         while tm_min >= freq:
