@@ -1,4 +1,5 @@
 import os
+import sys
 import pickle
 import array
 import time as _time
@@ -46,7 +47,9 @@ if __name__ == '__main__':
     x_time = []
     y_price = []
 
-    print(_time.ctime())
+    if not os.path.exists(tmsf_file):
+        print('no data file')
+        sys.exit(0)
     while True:
         with open(tmsf_file, 'rb') as datafile:
             a_list = pickle.load(datafile)
