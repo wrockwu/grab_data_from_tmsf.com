@@ -4,8 +4,36 @@ import array
 import time as _time
 import numpy as np
 import pylab as plt
+from matplotlib.ticker import MultipleLocator, FuncFormatter
 
 tmsf_file = os.path.expanduser('~/tmsf/price.txt')
+
+ax = plt.gca()
+
+def draw(x_time, y_price):
+    ymajorLocator   = MultipleLocator(2500)
+    yminorLocator   = MultipleLocator(500)
+
+    width = 0.1
+    idx = np.arange(len(x_time))
+    plt.bar(idx, y_price, width, color='red', label='+++++++++++')
+    plt.xticks(idx+width/2, x_time, rotation=360)
+    plt.ylim(15000)
+    plt.xlabel('time')
+    plt.ylabel('price')
+    plt.grid()
+
+    ax.yaxis.set_major_locator(ymajorLocator)
+    ax.yaxis.set_minor_locator(yminorLocator)
+    ax.yaxis.grid(True, which='minor')
+
+    for c in range(0, len(y_price)):
+        ax.annotate(str(y_price[c]), xy=(c,y_price[c]), xycoords='data',
+                                xytext=(20, 20), textcoords='offset points',
+                                                arrowprops=dict(arrowstyle="->")
+                                                                )
+
+    plt.show()
 
 if __name__ == '__main__':
     tm = _time.ctime()
@@ -34,8 +62,8 @@ if __name__ == '__main__':
                     price = float(item[4])
 
                     pcs_count = count - last_count
-                    pcs_area = area - last_area
-                    pcs_price = ((area*price) - last_total)/ pcs_area
+                    pcs_area = round(area - last_area, 1)
+                    pcs_price = round(((area*price) - last_total)/ pcs_area, 1)
 
                     last_count = count
                     last_area = area
@@ -45,13 +73,5 @@ if __name__ == '__main__':
                     y_price.append(pcs_price)
 
                     print(pcs_count,pcs_area,pcs_price)
-
-        width = 0.3
-        idx = np.arange(len(x_time))
-        plt.bar(idx, y_price, width, color='red', label='pcs price')
-        plt.xticks(idx+width/2, x_time, rotation=360)
-        plt.xlabel('time')
-        plt.ylabel('price')
-        plt.title('What The Fuck!')
-        plt.show()
+        draw(x_time, y_price)
         _time.sleep(10)

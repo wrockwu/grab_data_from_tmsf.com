@@ -13,7 +13,7 @@ DEBUG_OUTPUT = 'ON'
 url = 'http://www.tmsf.com/daily.htm'
 user_agent = 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:45.0) Gecko/20100101 Firefox/45.0'
 headers = {'User-Agent':user_agent}
-user_href = '盛世诚品'
+user_href = '盛世诚品公寓'
 
 tmsf_dir = os.path.expanduser('~/tmsf')
 tmsf_file = os.path.expanduser('~/tmsf/price.txt')
@@ -110,7 +110,8 @@ def url_open():
     while retry < retry_times:
         retry += 1
         try:
-            with urllib.request.urlopen(req) as data:
+            data = urllib.request.urlopen(req)
+            if not (data == None):
                 return data.read().decode('utf-8')
         except urllib.error.URLError as e:
             debug("retry times:" + str(retry))
