@@ -7,7 +7,7 @@ import urllib.request
 import re
 from bs4 import BeautifulSoup
 
-'''debug on/off'''
+'''debug information output on/off'''
 DEBUG_OUTPUT = 'ON'
 
 url = 'http://www.tmsf.com/daily.htm'
@@ -22,16 +22,18 @@ tmsf_log = os.path.expanduser('~/tmsf/log.txt')
 regular_letter = '.*?class="numb(.*?)"'
 letter2arb={'zero':'0','one':'1','two':'2','three':'3','four':'4','five':'5','six':'6','seven':'7','eight':'8','nine':'9','dor':'.'}
 
-'''pick up data every 'freq' at 'tm_hour_start':00:00-'tm_hour_end':00:00'''
+'''put this tag in data list'''
 tm_tag = '00:00:00'
+'''work start time & end time'''
 tm_hour_start = 9
 tm_hour_end = 23
+'''grab data frequency'''
 freq = 1
 tm_sec_sleep = freq*60
-
+'''url open failed retry time'''
 retry_times = 5
 
-'''store last time data'''
+'''store last time's data'''
 last_ripe = ['0', '0', '0', '0']
 
 def debug(string):
@@ -54,7 +56,7 @@ def data_handler(s_data, u_href):
         return complete_data
 
     soup = BeautifulSoup(s_data, 'lxml')
-    '''get specify house information block'''
+    '''get specify house information'''
     data = soup.find('div', style='display:block')
     if data == None:
         debug('cant find data table(incomplete web data?)')
@@ -68,8 +70,8 @@ def data_handler(s_data, u_href):
             item = None
     data = item
     if data == None :
-        '''non-exist specify data, return NULL'''
-        debug('zero turnover until now')
+        '''specify house isn't there, error court name or zero turnover?'''
+        debug('wrong court name or zero turnover until now')
         data = []
         return data
     data = data.find_parent('tr')
@@ -208,7 +210,7 @@ if __name__ == '__main__':
             tm_min -= freq
 
         if (tm_hour_now > tm_hour_start) and (tm_hour_now < tm_hour_end):
-            '''scrab data every 30min in this period'''
+            '''scrab data every 1 min'''
             debug('start pick up data @ ' + tm_tag)
             main()
             '''keep accurate to get second again, main() costs lot of time'''
@@ -217,7 +219,7 @@ if __name__ == '__main__':
             debug('sleep ' + str(tm_need_sleep) + 's')
             _time.sleep(tm_need_sleep)
         else:
-            '''midnight wakeup every hour'''
+            '''midnighti, wakeup every hour'''
             tm_need_sleep = 60*60 - ((tm_min_now)*60 + tm_sec_now)
             debug('+++++++++++++Rest Time+++++++++++++++++')
             debug('time @ ' + tm_tag)
