@@ -44,6 +44,7 @@ if __name__ == '__main__':
     last_price = 0
     last_total = 0
     last_len = 0
+    last_day = 0
     x_time = []
     y_price = []
 
@@ -60,20 +61,37 @@ if __name__ == '__main__':
                 print('data unchange')
             else:
                 for item in a_list:
+                    tm_tag = item[0]
+                    day = tm_tag[0:6]
                     count = float(item[1])
                     area = float(item[3])
                     price = float(item[4])
 
-                    pcs_count = count - last_count
-                    pcs_area = round(area - last_area, 1)
-                    pcs_price = round(((area*price) - last_total)/ pcs_area, 1)
+                    if day == last_day:
+                        pcs_count = count - last_count
+                        pcs_area = round(area - last_area, 1)
+                        pcs_price = round(((area*price) - last_total)/ pcs_area, 1)
+                        last_count = count
+                        last_area = area
+                        last_total = area * price
+                        last_day = day
+                        x_time.append(item[0])
+                        y_price.append(pcs_price)
+                    else:
+                        print('new day ' + day)
+                        last_count = 0
+                        last_area = 0
+                        last_total = 0
 
-                    last_count = count
-                    last_area = area
-                    last_total = area * price
-                    last_len = length
-                    x_time.append(item[0])
-                    y_price.append(pcs_price)
+                        pcs_count = count - last_count
+                        pcs_area = round(area - last_area, 1)
+                        pcs_price = round(((area*price) - last_total)/ pcs_area, 1)
+                        last_count = count
+                        last_area = area
+                        last_total = area * price
+                        last_day = day
+                        x_time.append(item[0])
+                        y_price.append(pcs_price)
 
                     print(pcs_count,pcs_area,pcs_price)
         draw(x_time, y_price)
