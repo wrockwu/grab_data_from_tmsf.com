@@ -11,7 +11,7 @@ tmsf_file = os.path.expanduser('~/tmsf/price.txt')
 
 ax = plt.gca()
 
-def draw(x_time, y_price):
+def draw(x_time, y_price, an_area):
     ymajorLocator   = MultipleLocator(2500)
     yminorLocator   = MultipleLocator(500)
 
@@ -29,7 +29,7 @@ def draw(x_time, y_price):
     ax.yaxis.grid(True, which='minor')
 
     for c in range(0, len(y_price)):
-        ax.annotate(str(y_price[c]), xy=(c,y_price[c]), xycoords='data',
+        ax.annotate(str(y_price[c]) + '(' + str(an_area[c]) + ' square meter)', xy=(c,y_price[c]), xycoords='data',
                                 xytext=(20, 20), textcoords='offset points',
                                                 arrowprops=dict(arrowstyle="->")
                                                                 )
@@ -47,6 +47,7 @@ if __name__ == '__main__':
     last_day = 0
     x_time = []
     y_price = []
+    an_area = []
 
     if not os.path.exists(tmsf_file):
         print('no data file')
@@ -77,6 +78,7 @@ if __name__ == '__main__':
                         last_day = day
                         x_time.append(item[0])
                         y_price.append(pcs_price)
+                        an_area.append(pcs_area)
                     else:
                         print('new day ' + day)
                         last_count = 0
@@ -92,7 +94,8 @@ if __name__ == '__main__':
                         last_day = day
                         x_time.append(item[0])
                         y_price.append(pcs_price)
+                        an_area.append(pcs_area)
 
                     print(pcs_count,pcs_area,pcs_price)
-        draw(x_time, y_price)
+        draw(x_time, y_price, an_area)
         _time.sleep(10)
