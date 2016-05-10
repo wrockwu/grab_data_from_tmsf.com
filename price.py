@@ -161,7 +161,7 @@ def main():
             '''store data if list has real data'''
             if ripe:
                 '''[1] is count, count unchang, other info mustn't chang, ignore it'''
-                if ripe[1] == last_ripe[1]:
+                if ripe[0][0:6] == last_ripe[0][0:6] and ripe[1] == last_ripe[1]:
                     debug('ignore unchanged data:' + str(ripe))
                 else:
                     debug('store changed data:' + str(ripe))
@@ -211,7 +211,7 @@ if __name__ == '__main__':
         tm_need_sleep = tm_sec_sleep
         '''extract time, drop date'''
         tm_list = _time.ctime().split(' ')
-        tm_tag = tm_list[1] + ' ' + tm_list[3] + ' ' + tm_list[4]
+        tm_tag = tm_list[1] + ' ' + tm_list[2] + ' ' + tm_list[3]
 
         '''calc left time should sleep'''
         while tm_min >= freq:

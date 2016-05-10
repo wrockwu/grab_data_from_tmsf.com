@@ -30,7 +30,7 @@ def draw(x_time, y_price, an_area):
 
     for c in range(0, len(y_price)):
         ax.annotate(str(y_price[c]) + '(' + str(an_area[c]) + ' square)', xy=(c,y_price[c]), xycoords='data',
-                                xytext=(20, 20), textcoords='offset points',
+                                xytext=(15, 15), textcoords='offset points',
                                                 arrowprops=dict(arrowstyle="->")
                                                                 )
 
