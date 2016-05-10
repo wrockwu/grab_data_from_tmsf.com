@@ -59,7 +59,12 @@ def data_handler(s_data, u_href):
     '''get specify house information'''
     data = soup.find('div', style='display:block')
     if data == None:
-        debug('cant find data table(incomplete web data?)')
+        debug('#1 cant find data table(incomplete web data?)')
+        data = []
+        return data
+
+    if data.table == None:
+        debug('#2 cant find data table(incomplete web data?)')
         data = []
         return data
     data = data.table.find_all('a', href=True)
@@ -122,6 +127,9 @@ def url_open():
         except urllib.error.HTTPError as e:
             debug("retry times:" + str(retry))
             debug(e.reason)
+            continue
+        except:
+            debug('unknow except, retry times:' + str(retry))
             continue
 
     debug("url open failed")
