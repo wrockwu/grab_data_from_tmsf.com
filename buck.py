@@ -18,19 +18,20 @@ def draw(x_time, y_price, an_area):
     width = 0.1
     idx = np.arange(len(x_time))
     plt.bar(idx, y_price, width, color='red', label='+++++++++++')
-    plt.xticks(idx+width/2, x_time, rotation=360)
+    plt.xticks(idx+width/2, x_time, rotation=90)
     plt.ylim(15000)
     plt.xlabel('time')
     plt.ylabel('price')
     plt.grid()
+    plt.subplots_adjust(bottom=0.2)
 
     ax.yaxis.set_major_locator(ymajorLocator)
     ax.yaxis.set_minor_locator(yminorLocator)
     ax.yaxis.grid(True, which='minor')
 
     for c in range(0, len(y_price)):
-        ax.annotate(str(y_price[c]) + '(' + str(an_area[c]) + ' square)', xy=(c,y_price[c]), xycoords='data',
-                                xytext=(15, 15), textcoords='offset points',
+        ax.annotate(str(y_price[c]) + '(' + str(an_area[c]) + ')', xy=(c,y_price[c]), xycoords='data',
+                                xytext=(1, 25), textcoords='offset points',
                                                 arrowprops=dict(arrowstyle="->")
                                                                 )
 
@@ -64,14 +65,15 @@ if __name__ == '__main__':
                 for item in a_list:
                     tm_tag = item[0]
                     day = tm_tag[0:6]
+                    print(day)
                     count = float(item[1])
                     area = float(item[3])
                     price = float(item[4])
 
                     if day == last_day:
                         pcs_count = count - last_count
-                        pcs_area = round(area - last_area, 1)
-                        pcs_price = round(((area*price) - last_total)/ pcs_area, 1)
+                        pcs_area = round(area - last_area, 2)
+                        pcs_price = round(((area*price) - last_total)/ pcs_area, 2)
                         last_count = count
                         last_area = area
                         last_total = area * price
